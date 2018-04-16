@@ -19,4 +19,4 @@ commands:
     ### For 2.1
     #- /usr/bin/time python m2.1.py 10
     ## For 3
-    #- /usr/bin/time nvprof python m3.1.py
+    - /usr/bin/time nvprof python m3.1.py
