@@ -3,6 +3,7 @@
 #define MXNET_OPERATOR_NEW_FORWARD_CUH_
 
 #include <mxnet/base.h>
+#include </usr/local/cuda-8.0/targets/x86_64-linux/include/cuda_profiler_api.h>
 
 // Set the tile width, use 16 for now since it is suggested in the textbook
 #define TILE_WIDTH 16
@@ -71,33 +72,33 @@ __global__ void forward_kernel(float *y, const float *x, const float *k, const i
 /*
   IN PROGRESS: Finishing up the code and wait for modification
 */
-__global__ void unroll_Kernel (int C, int H, int W, int K, float* X, float X_unroll){
-  int c, s, p, q;
-  int h_out, w_out, h_unroll, w_unroll, w_base;
-  //@@ Notice: Need to define the value of MAX_NUM_THREADS
-  int t = blockIdx.x * MAX_NUM_THREADS + threadIdx.x;
-  int H_out = H - K + 1;
-  int W_out = W - K + 1;
-  int W_unroll = H_out * W_out;
-  #define x3d(i2, i1, i0) x[(i2) * (H * W) + (i1) * (W) + i0]
-
-  if (t < C * W_unroll){
-    c = t / W_unroll;
-    s = t % W_unroll;
-    h_out = s / W_out;
-    w_out = s % W_out;
-    h_unroll = h_out * W_out + w_out;
-    w_base = c * K * K;
-    for (p = 0; p < K, p++){
-      for (q = 0; q < K, q++){
-        w_unroll = w_base + p*K + q;
-        //@@ NOTICE: Still need to figure out why here is x3d
-        X_unroll[h_unroll + (w_unroll * W_unroll)] = x3d(c, h_out+p, w_out+q);
-      }
-    }
-  }
-  #undef x4d
-}
+// __global__ void unroll_Kernel (int C, int H, int W, int K, float* X, float X_unroll){
+//   int c, s, p, q;
+//   int h_out, w_out, h_unroll, w_unroll, w_base;
+//   //@@ Notice: Need to define the value of MAX_NUM_THREADS
+//   int t = blockIdx.x * MAX_NUM_THREADS + threadIdx.x;
+//   int H_out = H - K + 1;
+//   int W_out = W - K + 1;
+//   int W_unroll = H_out * W_out;
+//   #define x3d(i2, i1, i0) x[(i2) * (H * W) + (i1) * (W) + i0]
+//
+//   if (t < C * W_unroll){
+//     c = t / W_unroll;
+//     s = t % W_unroll;
+//     h_out = s / W_out;
+//     w_out = s % W_out;
+//     h_unroll = h_out * W_out + w_out;
+//     w_base = c * K * K;
+//     for (p = 0; p < K, p++){
+//       for (q = 0; q < K, q++){
+//         w_unroll = w_base + p*K + q;
+//         //@@ NOTICE: Still need to figure out why here is x3d
+//         X_unroll[h_unroll + (w_unroll * W_unroll)] = x3d(c, h_out+p, w_out+q);
+//       }
+//     }
+//   }
+//   #undef x4d
+// }
 
 /*
    This function is called by new-inl.h
@@ -134,11 +135,14 @@ void forward<gpu, float>(mshadow::Tensor<gpu, 4, float> &y, const mshadow::Tenso
     dim3 gridDim(N, M, Z);
     dim3 blockDim(TILE_WIDTH, TILE_WIDTH, 1);
 
+    if (M == 6) cudaProfilerStart();
     // Call the kernel
     forward_kernel<<<gridDim, blockDim, 0>>>(y.dptr_,x.dptr_,w.dptr_, N,M,C,H,W,K);
 
     // Use MSHADOW_CUDA_CALL to check for CUDA runtime errors.
     MSHADOW_CUDA_CALL(cudaDeviceSynchronize());
+
+    if(M == 6) cudaProfilerStop();
 
 }
 
