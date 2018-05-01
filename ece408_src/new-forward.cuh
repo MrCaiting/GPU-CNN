@@ -85,6 +85,14 @@ void forward<gpu, float>(mshadow::Tensor<gpu, 4, float> &y, const mshadow::Tenso
     const int W = x.shape_[3];
     const int K = w.shape_[2];
 
+    // Need to checkout the dimension of the input data size
+    printf("The Value of N = %d\n", N);
+    printf("The Value of M = %d\n", M);
+    printf("The Value of C = %d\n", C);
+    printf("The Value of H = %d\n", H);
+    printf("The Value of W = %d\n", W);
+    printf("The Value of K = %d\n", K);
+
     // Set the kernel dimensions
     const int H_out = H - K + 1;
     const int W_out = W - K + 1;
