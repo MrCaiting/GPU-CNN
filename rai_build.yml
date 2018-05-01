@@ -19,7 +19,7 @@ commands:
     ### For 2.1
     #- /usr/bin/time python m2.1.py 10
     ## For 3
-    #- nvprof python m3.1.py
+    #- nvprof python m3.1.py 100
 
     # Trying to get time report using based on the suggestion provided online
     - nvprof -o timeline.nvvp --analysis-metrics --events all --metrics all --profile-from-start off python m3.1.py 100

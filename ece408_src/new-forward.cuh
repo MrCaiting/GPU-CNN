@@ -10,7 +10,7 @@
 
 // TEST: Try to declare the constant memory stored array for kernel
 #define MAX_KERNEL_SIZE 2400
-__constant__ float W[MAX_KERNEL_SIZE];
+__constant__ float MASK[MAX_KERNEL_SIZE];
 
 
 namespace mxnet
@@ -19,12 +19,12 @@ namespace op
 {
 
 // The kernel code
-// __global__ void forward_kernel(float *y, const float *x, const float *k, const int B, const int M, const int C, const int H, const int W, const int K)
-// {
+__global__ void forward_kernel(float *y, const float *x, const float *k, const int B, const int M, const int C, const int H, const int W, const int K)
+{
 
 // Modified version for running with the constant memory
-__global__ void forward_kernel(float *y, const float *x, const int B, const int M, const int C, const int H, const int W, const int K)
-{
+// __global__ void forward_kernel(float *y, const float *x, const int B, const int M, const int C, const int H, const int W, const int K)
+// {
 
     /*
     Modify this function to implement the forward pass described in Chapter 16.
@@ -63,7 +63,7 @@ __global__ void forward_kernel(float *y, const float *x, const int B, const int 
     //#define k4d(i3, i2, i1, i0) k[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0]
 
     // Modified version for running with the constant memory
-    #define k4d(i3, i2, i1, i0) W[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0]
+    #define k4d(i3, i2, i1, i0) MASK[(i3) * (C * K * K) + (i2) * (K * K) + (i1) * (K) + i0]
 
     if ((h < H_out) && (w < W_out)){
 
@@ -147,14 +147,14 @@ void forward<gpu, float>(mshadow::Tensor<gpu, 4, float> &y, const mshadow::Tenso
     dim3 gridDim(N, M, Z);
     dim3 blockDim(TILE_WIDTH, TILE_WIDTH, 1);
 
-    cudaMemcpyToSymbol (W, w, M*C*K*K*sizeof(float));
+    cudaMemcpyToSymbol (MASK, w.dptr_, M*C*K*K*sizeof(float));
 
     if (M == 6) cudaProfilerStart();
     // Call the kernel
-    // forward_kernel<<<gridDim, blockDim, 0>>>(y.dptr_,x.dptr_,w.dptr_, N,M,C,H,W,K);
+    forward_kernel<<<gridDim, blockDim, 0>>>(y.dptr_,x.dptr_,w.dptr_, N,M,C,H,W,K);
 
     // Modified version for running with the constant memory
-    forward_kernel<<<gridDim, blockDim, 0>>>(y.dptr_,x.dptr_, N,M,C,H,W,K);
+    //forward_kernel<<<gridDim, blockDim, 0>>>(y.dptr_,x.dptr_, N,M,C,H,W,K);
 
     // Use MSHADOW_CUDA_CALL to check for CUDA runtime errors.
     MSHADOW_CUDA_CALL(cudaDeviceSynchronize());
